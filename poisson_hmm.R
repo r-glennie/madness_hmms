@@ -52,36 +52,9 @@ CalcNegLlk <- function(wpar, data, n.states) {
  return(-llk)
 }
 
-CalcMadNegLlk <- function(wpar, data, n.states) {
-  llk <- madness(val = 0, dvdx = matrix(0, nr = 1, nc = length(wpar)), 
-                             vtag = "llk", xtag = "wpar")
-  par <- ConvertW2N(wpar, n.states)
-  lambda <- par$lambda
-  tpm <- par$tpm
-  delta <- par$delta
-  n <- length(data)
-  P <- matrix(sapply(1:n.states, FUN = function(s) {return(dpois(data, lambda[s]))}), 
-              nr = n, nc = n.states)
-  g = "wpar")
-  phi <- delta 
-  sum.phi <- 0 
-  for (t in 1:n) {
-    phi <- phi %*% tpm * P[t, ]
-    sum.phi <- sum(phi) 
-    llk <- llk + log(sum.phi)
-    phi <- phi / sum.phi 
-  } 
-  llk <- -llk
-  return(to_objective(llk))
-}
-
-FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm, mad = FALSE) {
+FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm) {
   ini.par <- ConvertN2W(ini.lambda, ini.tpm, n.states) 
-  if (mad) {
-    mod <- nlm(CalcMadNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
-  } else {
-    mod <- nlm(CalcNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
-  }
+  mod <- nlm(CalcNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
   est <- ConvertW2N(mod$estimate, n.states)
   V <- solve(mod$hessian)  
   llk <- -mod$minimum
