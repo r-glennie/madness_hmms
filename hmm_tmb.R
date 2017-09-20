@@ -1,4 +1,7 @@
-# Functions to fit a Poisson HMM 
+# HMM with TMB
+library(TMB)
+compile("hmm_tmb.cpp")
+dyn.load(dynlib("hmm_tmb"))
 
 SimulatePoHmm <- function(n, lambda, tpm, n.states, delta) {
  s <- numeric(n)
@@ -9,10 +12,9 @@ SimulatePoHmm <- function(n, lambda, tpm, n.states, delta) {
  return(data)
 }
 
-
 ConvertN2W <- function(lambda, tpm, n.states) { 
   # Poisson means first, log link 
-  wpar <- log(c(lambda[1], diff(lambda))) 
+  wpar <- log(c(lambda[1], diff(lambda)))
   # Transition probabilities, logit link
   tr_tpm <- log(tpm / diag(tpm))
   wpar <- c(wpar, as.vector(tr_tpm[!diag(n.states)]))
@@ -31,35 +33,14 @@ ConvertW2N <- function(wpar, n.states) {
   return(list(lambda = lambda, tpm = tpm, delta = delta))
 }
 
-CalcNegLlk <- function(wpar, data, n.states) {
- par <- ConvertW2N(wpar, n.states)
- lambda <- par$lambda
- tpm <- par$tpm
- delta <- par$delta
- n <- length(data)
- P <- matrix(sapply(1:n.states, FUN = function(s) {return(dpois(data, lambda[s]))}), 
-             nr = n, nc = n.states)
- llk <- 0
- phi <- delta 
- sum.phi <- 0 
- for (t in 1:n) {
-  phi <- phi %*% tpm * P[t, ]
-  sum.phi <- sum(phi) 
-  llk <- llk + log(sum.phi)
-  phi <- phi / sum.phi 
- } 
- cat("llk: ", llk, "par:", wpar, "\n")
- return(-llk)
-}
-
 FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm) {
-  ini.par <- ConvertN2W(ini.lambda, ini.tpm, n.states) 
-  mod <- nlm(CalcNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
-  est <- ConvertW2N(mod$estimate, n.states)
-  V <- solve(mod$hessian)  
-  llk <- -mod$minimum
-  return(list(llk = llk, est = est, V = V))
+  dat <- list(data = data, n_states = n.states)
+  par <- list(wpar = ConvertN2W(ini.lambda, ini.tpm, n.states))
+  obj <- MakeADFun(data = dat, parameters = par, DLL = "hmm_tmb")
+  obj$hessian <- FALSE
+  mod <- do.call("optim", obj)
+  est <- ConvertW2N(mod$par, n.states)
+  sd <- sdreport(obj)  
+  llk <- -mod$value
+  return(list(llk = llk, est = est, sd = sd))
 }
-
-
-
