@@ -36,7 +36,7 @@ ConvertW2N <- function(wpar, n.states) {
 FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm) {
   dat <- list(data = data, n_states = n.states)
   par <- list(wpar = ConvertN2W(ini.lambda, ini.tpm, n.states))
-  obj <- MakeADFun(data = dat, parameters = par, DLL = "hmm_tmb")
+  obj <- MakeADFun(data = dat, parameters = par, DLL = "hmm_tmb", silent = TRUE)
   obj$hessian <- FALSE
   mod <- do.call("optim", obj)
   est <- ConvertW2N(mod$par, n.states)

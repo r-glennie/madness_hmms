@@ -1,4 +1,7 @@
 # Functions to fit a Poisson HMM 
+library(TMB)
+compile("hmm_tmb.cpp")
+dyn.load(dynlib("hmm_tmb"))
 
 SimulatePoHmm <- function(n, lambda, tpm, n.states, delta) {
  s <- numeric(n)
@@ -48,17 +51,27 @@ CalcNegLlk <- function(wpar, data, n.states) {
   llk <- llk + log(sum.phi)
   phi <- phi / sum.phi 
  } 
- cat("llk: ", llk, "par:", wpar, "\n")
+ #cat("llk: ", llk, "par:", wpar, "\n")
  return(-llk)
+}
+
+FitPoHmmTMB <- function(data, n.states, ini.lambda, ini.tpm) {
+  dat <- list(data = data, n_states = n.states)
+  par <- list(wpar = ConvertN2W(ini.lambda, ini.tpm, n.states))
+  obj <- MakeADFun(data = dat, parameters = par, DLL = "hmm_tmb", silent = TRUE)
+  obj$hessian <- FALSE
+  mod <- do.call("optim", obj)
+  est <- ConvertW2N(mod$par, n.states)
+  llk <- -mod$value
+  return(list(llk = llk, est = est))
 }
 
 FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm) {
   ini.par <- ConvertN2W(ini.lambda, ini.tpm, n.states) 
   mod <- nlm(CalcNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
   est <- ConvertW2N(mod$estimate, n.states)
-  V <- solve(mod$hessian)  
   llk <- -mod$minimum
-  return(list(llk = llk, est = est, V = V))
+  return(list(llk = llk, est = est))
 }
 
 

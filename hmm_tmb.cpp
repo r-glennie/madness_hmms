@@ -9,7 +9,9 @@ Type objective_function<Type>::operator() ()
   // Read in parameters
   PARAMETER_VECTOR(wpar);
   // Unpack and transform parameters
-  vector<Type> lambda(wpar.head(n_states));  
+  vector<Type> lambda(wpar.head(n_states));
+  lambda = exp(lambda);
+  for (int i = 0; i < n_states - 1; ++i) lambda(i + 1) += lambda(i);  
   matrix<Type> tpm(n_states, n_states);
   int cur = n_states; 
   for (int i = 0; i < n_states; ++i) {
@@ -37,18 +39,19 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < n; ++i) {
       prob(i, s) = dpois(data(i), lambda[s]); 
     }
-  }  
+  } 
   // compute log-likelihood 
   Type llk = 0;
   matrix<Type> phi(delta);
   Type sumphi = 0;
   for (int i = 0; i < n; ++i) {
+    phi = (phi.array() * prob.row(i).array()).matrix();  
     phi = phi * tpm;
     sumphi = phi.sum();
     llk += log(sumphi);
     phi /= sumphi;
   }
   Type nll = -llk; 
-  std::cout << "llk: " << llk << std::endl; 
+  //std::cout << "llk: " << llk << std::endl; 
   return nll;
 }
