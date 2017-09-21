@@ -9,6 +9,7 @@ double C_CalcNegLlk(const arma::vec wpar,
   // unpack and transform parameters  
   arma::vec lambda(wpar.rows(0, n_states - 1));
   lambda = exp(lambda); 
+  // lambda is computed cumulatively to prevent label-switching 
   lambda = cumsum(lambda);
   arma::mat tpm(n_states, n_states);
   int cur = n_states; 
@@ -22,14 +23,21 @@ double C_CalcNegLlk(const arma::vec wpar,
     }
     tpm.row(i) /= accu(tpm.row(i)); 
   } 
-  // compute stationary distribution 
+  // compute stationary distribution
+  arma::rowvec delta(n_states); 
   arma::mat I = arma::eye<arma::mat>(n_states, n_states); 
   arma::mat tpminv = I; 
   tpminv -= tpm; 
   tpminv += 1; 
   arma::rowvec ivec = arma::ones<arma::rowvec>(n_states); 
-  tpminv = inv(tpminv);
-  arma::rowvec delta = ivec * tpminv;
+  // if tpm is ill-conditioned then just use uniform initial distribution 
+  try {
+    tpminv = inv(tpminv);
+    delta = ivec * tpminv;
+  } catch(...) {
+    delta.ones(); 
+    delta /= n_states; 
+  }
   // compute observation probabilities 
   int n = data.n_rows; 
   arma::mat prob(n, n_states); 

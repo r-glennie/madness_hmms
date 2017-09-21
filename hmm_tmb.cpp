@@ -1,5 +1,10 @@
 #include <TMB.hpp>
-
+// Compute Negative-Log likelihood for Poisson HMM 
+// DATA: 
+//   data: vector of observed counts 
+//   n_states: number of states 
+// PARAMETERS: 
+//   wpar: vector of working parameters
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
@@ -11,6 +16,7 @@ Type objective_function<Type>::operator() ()
   // Unpack and transform parameters
   vector<Type> lambda(wpar.head(n_states));
   lambda = exp(lambda);
+  // lambda is computed cumulatively to prevent label-switching 
   for (int i = 0; i < n_states - 1; ++i) lambda(i + 1) += lambda(i);  
   matrix<Type> tpm(n_states, n_states);
   int cur = n_states; 
@@ -24,20 +30,26 @@ Type objective_function<Type>::operator() ()
    } 
    tpm.row(i) /= tpm.row(i).sum();
   } 
-  // Compute stationary distribution 
+  // Compute stationary distribution
+  matrix<Type> delta(1, n_states); 
   matrix<Type> I = matrix<Type>::Identity(n_states, n_states);
   matrix<Type> tpminv = I; 
   tpminv -= tpm; 
   tpminv = (tpminv.array() + 1).matrix(); 
-  matrix<Type> ivec(1, n_states); for (int i = 0; i < n_states; ++i) ivec(0, i) = 1; 
-  tpminv = tpminv.inverse();
-  matrix<Type> delta = ivec * tpminv;
+  matrix<Type> ivec(1, n_states); for (int i = 0; i < n_states; ++i) ivec(0, i) = 1;
+  // if tpm is ill-conditioned then just use uniform initial distribution 
+  try {
+    tpminv = tpminv.inverse();
+    delta = ivec * tpminv;
+  } catch(...) {
+    for (int i = 0; i < n_states; ++i) delta(0, i) = 1.0 / n_states; 
+  }
   // compute observation probabilities
   int n = data.rows();  
   matrix<Type> prob(n, n_states); 
   for (int s = 0; s < n_states; ++s) {
     for (int i = 0; i < n; ++i) {
-      prob(i, s) = dpois(data(i), lambda[s]); 
+      prob(i, s) = dpois(data(i), lambda(s)); 
     }
   } 
   // compute log-likelihood 

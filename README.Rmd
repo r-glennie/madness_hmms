@@ -1,0 +1,91 @@
+---
+title: "HMM Madness: R, ARMA, and TMB"
+author: "Richard Glennie"
+date: "21/09/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### File Descriptions
+
+
+### Motivation 
+
+Hidden Markov Models (HMMs) can be efficiently fit by maximum likelihood, using 
+the forward algorithm. The time to fit simple models in R is small, but HMMs are
+becoming increasingly more computationally demanding, to be fit with 
+
+* greater numbers of hidden states
+* observations that are no longer single scalars, but vectors of observed 
+values; together with more sophisticated data probability distributions
+* longer time series 
+
+Furthermore, estimation of variance with HMMs is known to be unreliable 
+using an (approximate) Hessian; the parametric bootstrap leads to better 
+variance estimates---this is likely to be more important as HMMs contain more
+parameters and more sophistication. Bootstrapping can be very computationally
+intensive.
+
+Ultimately, fitting HMMs fast is important for model selection and producing 
+good variance estimates (faster fitting => more bootstrap resamples in the same
+time period => asymptotic bootstrap results more likely to hold => 
+better/more defensible variance estimates). Furthermore, HMMs are being 
+incorporated into other models (e.g., regression, animal movement modelling, and 
+financial time series): fitting more complicated models, where one or more HMM
+likelihood evaluations are only part of the required calculation per complete
+model likelihood evaluation, is only possible if HMM likelihoods can be computed
+efficiently. 
+
+On the other hand, the HMM algorithm is very flexible and easy to understand; 
+using code that is similarly flexible and readable makes adaptive 
+programming easier. 
+
+To consider this, I wrote code to fit the simple Poisson HMM (see Langrock) 
+Three ways to code the HMM likelihood and 
+fit HMMs in R using the BFGS
+optimiser are 
+
+1. R: write everything in R
+2. RcppArmadillo: writing the HMM likelihood in C++ using the Armadillo library
+3. TMB: template model builder, which uses automatic differentiation (CppAD) 
+and relies on the Eigen library
+
+### Coding: Readability and Ease of Use
+
+Strikingly, all three versions of the HMM likelihood computation look very 
+similar. R, Armadillo and Eigen have synonymous high-level interfaces for
+matrix handling and computation. The R and RcppArmadillo versions are similar
+to code; if one knows some C++ and Armadillo then there is little cost in
+writing the likelihood computation in C++. 
+
+Template Model Builder (TMB) was not as easy to use and requires more 
+familiarity with C++: 
+
+* A familiarity with C++ templates isn't essential, but is useful for 
+debugging. The automatic differentation relies on the correct variables being 
+declared as <code>\<Type\></code>.
+* The TMB library is not as robust as Eigen; sometimes operations that work in
+Eigen do not work with TMB <code>matrix</code> and <code>vector</code> objects,
+despite being based on Eigen. In most cases, this is because no polymorphic 
+alternative has been written to handle CppAD types. For example, <code>(v % w) * A</code> where <code>v</code>,<code>w</code> are vectors
+and <code>A</code> is a matrix, fails because 
+TMB does not have the required support for 
+operation chains. 
+* The dynamic library produced when compiling TMB objects has to be loaded into
+R. On some platforms (including mine), if you re-compile the object and re-load 
+the dynamic library, R either returns an error (because conflicting libraries 
+are loaded) or simply ignores the re-load and retains the old version of the 
+dynamic library. This is particularly frustrating when you are developing code: 
+edit TMB function, re-compile, re-load, does not re-load, cannot run editted
+function and debug. The only solution I found was to restart R every time I 
+wanted to re-load the dynamic library.  
+
+### Speed
+
+To test the speed, I simulated 999 data sets (a common number of desired 
+bootstrap re-samples) and fit the Poisson HMM to each using the three 
+verions: R, ARMA (RcppArmadillo), and TMB (Template Model Builder). I repeated
+this for different sample sizes and desired numbers of hidden states. 
+
