@@ -1,4 +1,7 @@
 # Functions to fit a Poisson HMM 
+library(Rcpp)
+library(RcppArmadillo)
+sourceCpp("hmm_arma.cpp")
 library(TMB)
 compile("hmm_tmb.cpp")
 dyn.load(dynlib("hmm_tmb"))
@@ -55,7 +58,16 @@ CalcNegLlk <- function(wpar, data, n.states) {
  return(-llk)
 }
 
-FitPoHmmTMB <- function(data, n.states, ini.lambda, ini.tpm) {
+FitPoHmmArma <- function(data, n.states, ini.lambda, ini.tpm) {
+  ini.par <- ConvertN2W(ini.lambda, ini.tpm, n.states) 
+  mod <- optim(ini.par, C_CalcNegLlk, data = data, n_states = n.states, 
+               method = "BFGS", hessian = TRUE)
+  est <- ConvertW2N(mod$par, n.states)
+  llk <- -mod$value
+  return(list(llk = llk, est = est))
+}
+
+FitPoHmmTmb <- function(data, n.states, ini.lambda, ini.tpm) {
   dat <- list(data = data, n_states = n.states)
   par <- list(wpar = ConvertN2W(ini.lambda, ini.tpm, n.states))
   obj <- MakeADFun(data = dat, parameters = par, DLL = "hmm_tmb", silent = TRUE)
@@ -66,11 +78,12 @@ FitPoHmmTMB <- function(data, n.states, ini.lambda, ini.tpm) {
   return(list(llk = llk, est = est))
 }
 
-FitPoHmm <- function(data, n.states, ini.lambda, ini.tpm) {
+FitPoHmmR <- function(data, n.states, ini.lambda, ini.tpm) {
   ini.par <- ConvertN2W(ini.lambda, ini.tpm, n.states) 
-  mod <- nlm(CalcNegLlk, ini.par, data = data, n.states = n.states, hessian = TRUE)
-  est <- ConvertW2N(mod$estimate, n.states)
-  llk <- -mod$minimum
+  mod <- optim(ini.par, CalcNegLlk, data = data, n.states = n.states, 
+               method = "BFGS", hessian = TRUE)
+  est <- ConvertW2N(mod$par, n.states)
+  llk <- -mod$value
   return(list(llk = llk, est = est))
 }
 

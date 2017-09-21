@@ -52,6 +52,5 @@ Type objective_function<Type>::operator() ()
     phi /= sumphi;
   }
   Type nll = -llk; 
-  //std::cout << "llk: " << llk << std::endl; 
   return nll;
 }
