@@ -22,12 +22,12 @@ RunSimulation <- function(nsims = 1, n = 10000, true.n.states = 2, n.states = 2,
    diag(ini.tpm) <- 0.9
    ini.tpm[!diag(n.states)] <- 0.1 / (n.states - 1) 
   } 
-  if (is.null(delta)) delta <- solve(t(diag(n.states) - tpm  + 1), rep(1, n.states))
+  if (is.null(delta)) delta <- solve(t(diag(n.states) - ini.tpm  + 1), rep(1, n.states))
   times <- matrix(0, nr = nsims, nc = 3)
   for (s in 1:nsims) {
     cat(s, "/", nsims, "\r")
     # simulate data 
-    data <- SimulatePoHmm(n, lambda, tpm, n.states, delta)
+    data <- SimulatePoHmm(n, lambda, tpm, true.n.states)
     # fit HMM with R 
     times[s, 1] <- as.numeric(system.time(FitPoHmmR(data, n.states, ini.lambda, ini.tpm))[[3]])
     # fit HMM with RcppArmadillo

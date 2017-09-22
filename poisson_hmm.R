@@ -19,7 +19,8 @@ dyn.load(dynlib("hmm_tmb"))
 #' @param delta initial distribution 
 #'
 #' @return vector of observed counts 
-SimulatePoHmm <- function(n, lambda, tpm, n.states, delta) {
+SimulatePoHmm <- function(n, lambda, tpm, n.states) {
+ delta <- solve(t(diag(n.states) - tpm  + 1), rep(1, n.states))
  s <- numeric(n)
  state.space <- 1:n.states
  s <- sample(state.space, 1, prob = delta)
