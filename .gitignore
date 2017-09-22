@@ -1,6 +1,10 @@
 # History files
 .Rhistory
 .Rapp.history
+*.Rmd.swp
+*.o
+*.so
+*.Rproj
 
 # Session Data files
 .RData
