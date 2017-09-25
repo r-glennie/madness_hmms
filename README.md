@@ -1,4 +1,4 @@
-Code to fit Poisson Hidden Markov Model (see REF) in R, RcppAramdillo
+Code to fit Poisson Hidden Markov Model (see Zucchini et al. 2016) in R, RcppAramdillo
 and Template Model Builder. Coding of the algorithm is strikingly
 similar between the three programming approaches. Speed comparisons
 showed TMB to be faster in all cases, particularly faster when sample
