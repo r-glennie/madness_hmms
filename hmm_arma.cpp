@@ -1,6 +1,13 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 
+// Compute Negative-Log likelihood for Poisson HMM 
+// Inputs: 
+//   wpar: vector of working parameters 
+//   data: vector of counts 
+//   n_states: number of hidden states
+// Output: 
+//   negative log-likelihood value 
 //  [[Rcpp::export]]
 double C_CalcNegLlk(const arma::vec wpar, 
                   const arma::vec data, 

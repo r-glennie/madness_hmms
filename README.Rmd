@@ -6,18 +6,23 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Code to fit Poisson Hidden Markov Model (see REF) in R, RcppAramdillo and
 Template Model Builder. Coding of the algorithm is strikingly similar between
-the three programming approaches. 
+the three programming approaches. Speed comparisons showed TMB to be faster in
+all cases, particularly faster when sample size or the number of hidden states 
+was high. Motivation for this comparison was to consider best approach for 
+obtaining non-parametric bootstrap estimates of variance, requiring the HMM
+to be fit many times. 
 
 A basic knowledge of C++ makes coding the HMM algorithm in RcppArmadillo just as
 easy as coding in R. Implementing Template Model Builder required more knowledge
 of C++ and was less easy to use (see some notes on TMB below).
 
-### File description 
+### File descriptions
 
 * <code>poisson_hmm.R</code>: R functions to simulate Poisson HMM data,
   transform between natural and working parameters, and functions to fit HMM
@@ -34,8 +39,10 @@ of C++ and was less easy to use (see some notes on TMB below).
 
 ### Speed Comparison  
 
-```{r speed_comparison, include = FALSE} 
-read.csv("results.csv") 
+```{r speed_comparison, echo = FALSE, results = "asis"} 
+res <- read.csv("results.csv")[,-1]
+kable(res, digits = 2, caption = "Average time (in secs) taken to maximise Poisson HMM likelihood, with different numbers of states (NStates), for 99 data sets, each with sample size n, using R, RcppArmadillo (ARMA) and Template Model Builder (TMB) (NA means > 5 minutes)", 
+      col.names = c("n", "NStates", "R", "ARMA", "TMB"))
 ```
 
 
@@ -48,7 +55,7 @@ declared as <code>\<Type\></code>.
 Eigen do not work with TMB <code>matrix</code> and <code>vector</code> objects,
 despite being based on Eigen. In most cases, this is because no polymorphic
 alternative has been written to handle CppAD types. For example, <code>(v % w) *
-A</code> where <code>v</code>,<code>w</code> are vectors and <code>A</code> is a
+A</code> where <code>v</code>,<code>w</code> are row vectors and <code>A</code> is a
 matrix, fails because TMB does not have the required support for operation
 chains. 
 * The dynamic library produced when compiling TMB objects has to be loaded into
