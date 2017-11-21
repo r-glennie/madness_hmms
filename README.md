@@ -1,15 +1,19 @@
-Code to fit Poisson Hidden Markov Model (see Zucchini et al. 2016) in R, RcppAramdillo
-and Template Model Builder. Coding of the algorithm is strikingly
-similar between the three programming approaches. Speed comparisons
-showed TMB to be faster in all cases, particularly faster when sample
+Code to fit Poisson Hidden Markov Model (see Zucchini et al. 2016) in R, RcppAramdillo, Template Model Builder, 
+and Python. 
+
+Coding of the algorithm is strikingly
+similar between the all programming approaches. 
+
+A speed comparison was performed between R, RcppArmadillo and Template Model Builder. 
+TMB was faster in all cases, particularly faster when sample
 size or the number of hidden states was high. Motivation for this
 comparison was to consider best approach for obtaining non-parametric
 bootstrap estimates of variance, requiring the HMM to be fit many times.
-
 A basic knowledge of C++ makes coding the HMM algorithm in RcppArmadillo
 just as easy as coding in R. Implementing Template Model Builder
 required more knowledge of C++ and was less easy to use (see some notes
 on TMB below).
+
 
 ### File descriptions
 
@@ -21,6 +25,7 @@ on TMB below).
     Armadillo and Rcpp.
 -   <code>hmm\_tmb.cpp</code>: C++ code to compute HMM likelihood using
     Template Model Builder.
+-   <code>py_hmm.py</code>: python3 code to fit poisson HMM 
 -   <code>simulation.R</code>: R function for performing simulation
     study on Poisson HMM using three programming approaches.
 -   <code>run.R</code>: R code to run a simulation study and output the
