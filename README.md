@@ -2,7 +2,7 @@ Code to fit Poisson Hidden Markov Model (see Zucchini et al. 2016) in R, RcppAra
 and Python. 
 
 Coding of the algorithm is strikingly
-similar between the all programming approaches. 
+similar between all programming approaches. 
 
 A speed comparison was performed between R, RcppArmadillo and Template Model Builder. 
 TMB was faster in all cases, particularly faster when sample
