@@ -9,11 +9,6 @@ import time
 from scipy.stats import poisson
 from scipy.optimize import minimize
 
-#n = 10 
-#lamb = np.array([1, 100])
-#tpm = np.array([[0.95, 0.05], [0.05, 0.95]])
-#n_state = 2 
-
 def simulate_po_hmm(n, lamb, tpm, n_state):
     delta = np.linalg.solve(np.eye(n_state) - tpm + 1, np.ones(n_state))
     s = np.zeros(n, dtype="int")
